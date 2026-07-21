@@ -1,0 +1,45 @@
+[package]
+name = "robinarb"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy = { version = "1", features = [
+    "providers",
+    "provider-ws",
+    "provider-http",
+    "provider-debug-api",
+    "rpc-types",
+    "rpc-types-trace",
+    "sol-types",
+    "contract",
+    "signer-local",
+    "network",
+    "consensus",
+    "json-rpc",
+] }
+tokio = { version = "1", features = ["full"] }
+dashmap = "6"
+arc-swap = "1"
+petgraph = "0.8"
+rayon = "1.10"
+smallvec = { version = "1", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+clap = { version = "4", features = ["derive"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+reqwest = { version = "0.12", features = ["json"] }
+anyhow = "1"
+rustc-hash = "2"
+dotenvy = "0.15"
+rand = "0.8"
+futures = "0.3"
+async-trait = "0.1"
+uniswap_v3_math = "0.6.2"
+
+[profile.release]
+debug = true
+
+[dev-dependencies]

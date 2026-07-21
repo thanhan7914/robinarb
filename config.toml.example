@@ -1,0 +1,135 @@
+[rpc]
+http = ["http://127.0.0.1:8547"]
+ws = "ws://127.0.0.1:8548"
+# archive = "https://rpc.mainnet.chain.robinhood.com"
+sequencer = "https://sequencer.mainnet.chain.robinhood.com"
+send_rpc = "https://rpc.mainnet.chain.robinhood.com"
+
+[wallet]
+# Deployed ArbExecutor address (set after `forge script Deploy`). Leave unset for paper mode.
+# executor_contract = "0x0000000000000000000000000000000000000000"
+#
+# After ANY deploy, call `approveMorphoMax(anchorToken)` once per configured
+# anchor before flipping execution.enabled -- onMorphoFlashLoan no longer
+# self-approves per call (2026-07-21 gas fix: that cost a real SSTORE on
+# every single flashloan send, landed or reverted). Skipping this makes
+# every flashloan route revert on Morpho's own repay pull, not a contract bug.
+key_env = "PRIVATE_KEY"
+
+[discovery]
+enabled = true
+pools_file = "pools.toml"
+cache_dir = "cache"
+getlogs_chunk = 10000
+tick_sync_chunk = 1500
+concurrency = 8
+start_block = 0
+
+[filter]
+# Empty whitelist = allow all (subject to blacklist). Manual entries here are
+# now a fallback, not the primary mechanism: `ingest/fee_probe.rs` auto-probes
+# every newly-discovered non-anchor token for fee-on-transfer/rebase behavior
+# at bootstrap and unions positives into this blacklist in memory (cached in
+# cache/fee_probe.json, nothing written back here) -- found live 2026-07-20
+# via two real tokens (BOWYER, FLETCH) that skim ~1% on transfer and reverted
+# every route through them; see docs/PLAN.md Phase 6. Only add entries here
+# for tokens that are bad for reasons the probe can't see (pausable, honeypot,
+# blacklist-us-specifically, etc.) -- not for plain fee-on-transfer, which is
+# now automatic.
+token_whitelist = []
+token_blacklist = []
+
+[routing]
+max_hops = 3
+max_routes = 100000
+pair_fanout = 6
+drop_ms = 800
+spot_gate_bps = 5.0
+tier2_top_n = 200
+
+# Base tokens routes cycle out from and back to. Both anchors confirmed live
+# with real liquidity as of the Phase 0 DEX-discovery pass (docs/PHASE0_LOOKUPS.md
+# §9) — WETH/USDG pairs across Uniswap v2/v3/v4, PancakeSwap v3, SwapHood v3,
+# Sheriff v2 all show real volume. Thresholds below are placeholders copied
+# from Base's shape (NOT this chain's numbers) — this chain's liquidity depth
+# is unknown and likely much thinner; per PLAN.md Phase 7, tune these off
+# real observed data before enabling execution, don't trust these as-is.
+[[anchor]]
+symbol = "WETH"
+token = "0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73"
+decimals = 18
+min_liquidity = 0.1
+min_profit = "30000000000000"   # 0.00003 WETH — placeholder, retune
+max_trade = 1.0
+min_trade = 0.0005
+
+[[anchor]]
+symbol = "USDG"
+token = "0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"
+decimals = 6                     # confirmed via decimals() on-chain 2026-07-20 (was wrongly guessed as 18 -- caught by a Morpho flashloan test, not by inspection; see docs/PLAN.md Phase 5)
+min_liquidity = 200
+min_profit = "30000"             # 0.03 USDG at 6 decimals -- placeholder, retune
+max_trade = 2000
+min_trade = 1
+
+[gas]
+prio_fraction = 0.0      # Robinhood Chain sequencing is also FCFS (confirmed docs/PHASE0_LOOKUPS.md §1) — same reasoning as Base
+min_prio_gwei = 0.001
+max_prio_gwei = 0.005
+l1_fee_margin = 1.2
+
+[execution]
+enabled = false          # false = paper mode (log opportunities, never send) — stays false until PLAN.md Phase 7 go/no-go passes
+
+# ------------------------------------------------------------------
+# DEX factories on Robinhood Chain (chain id 4663). All addresses below are
+# round-trip on-chain verified (factory()/allPairs() calls against a real
+# pool), not taken from docs alone — see docs/PHASE0_LOOKUPS.md §2 and §9.
+# deploy_block left at 0 (discovery will scan from genesis); narrow this
+# once each factory's actual deploy block is known, to speed up the first
+# discovery run.
+# ------------------------------------------------------------------
+
+[[dex]]
+name = "uniswap_v2"
+kind = "v2"
+factory = "0x8bcEaA40B9AcdfAedF85AdF4FF01F5Ad6517937f"
+fee_bps = 30
+deploy_block = 0
+
+[[dex]]
+name = "uniswap_v3"
+kind = "v3"
+factory = "0x1f7d7550B1b028f7571E69A784071F0205FD2EfA"
+deploy_block = 0
+
+[[dex]]
+name = "uniswap_v4"
+kind = "v4"
+factory = "0x8366a39cc670b4001a1121b8f6a443a643e40951"
+deploy_block = 0
+
+[[dex]]
+name = "pancakeswap_v3"
+kind = "pancake_v3"
+factory = "0x0BFBCF9fA4f9C56b0F40a671Ad40E0805A091865"
+deploy_block = 0
+
+[[dex]]
+name = "sushiswap_v3"
+kind = "v3"
+factory = "0xE51960f1B45f1C9FB6D166E6a884F866fC70433B"
+deploy_block = 0
+
+[[dex]]
+name = "swaphood_v3"
+kind = "v3"
+factory = "0x0EC554f0BFf0Be6c99d1e95c8015bb0950f6A2C7"
+deploy_block = 0
+
+[[dex]]
+name = "sheriff_v2"
+kind = "v2"
+factory = "0x10F7d1eF77F58181484936170430df13539C5162"
+fee_bps = 30              # [LOOKUP] verify Sheriff's actual swap fee before trusting this
+deploy_block = 0
