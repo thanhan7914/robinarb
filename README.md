@@ -22,11 +22,6 @@ cargo build --release
 ./target/release/robinarb run         # paper mode until [execution] enabled = true
 ```
 
-Managed in production via systemd:
-```bash
-systemctl {start|stop|restart|status} robinarb.service
-```
-
 ## Repo layout
 
 - `src/ingest/` — discovery, state hydration, fee-on-transfer probing, live RPC/WS ingest.
